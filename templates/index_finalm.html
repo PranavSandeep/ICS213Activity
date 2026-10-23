@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Parking Lot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --ink: #111111;
+            --muted: #6b6b6b;
+            --ghost: #d9d9d9;
+            --line: 2px solid var(--ink);
+            --gap: 14px;
+            --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 32px 24px 48px;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: var(--font);
+            font-size: 15px;
+        }
+
+        .wrap {
+            max-width: 1040px;
+            margin: 0 auto;
+        }
+
+        .top {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .btn {
+            font-family: var(--font);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 6px 14px;
+            border: 1.5px solid var(--ink);
+            border-radius: 999px;
+            background: var(--bg);
+            color: var(--ink);
+            cursor: pointer;
+            transition: background 0.12s, color 0.12s;
+        }
+
+        .btn:hover {
+            background: var(--ink);
+            color: var(--bg);
+        }
+
+        .btn:focus-visible {
+            outline: 3px solid var(--ink);
+            outline-offset: 2px;
+        }
+
+        .btn-primary {
+            background: var(--ink);
+            color: var(--bg);
+        }
+
+        .btn-primary:hover {
+            background: var(--bg);
+            color: var(--ink);
+        }
+
+        .btn-admin {
+            border-style: dashed;
+        }
+
+        /* Lot: two vertical columns of bays with a drive aisle between them */
+        #lots {
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .lot-inner {
+            display: grid;
+            grid-template-columns: minmax(300px, 1fr) 72px minmax(300px, 1fr);
+            align-items: start;
+            min-width: 700px;
+        }
+
+        /* admin columns also hold the details text in front of each bay */
+        .lot-inner.admin {
+            grid-template-columns: minmax(430px, 1fr) 72px minmax(430px, 1fr);
+            min-width: 980px;
+        }
+
+        .lane {
+            display: flex;
+            flex-direction: column;
+            gap: var(--gap);
+        }
+
+        .aisle {
+            align-self: stretch;
+            position: relative;
+        }
+
+        .aisle::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            border-left: 2px dashed var(--ghost);
+        }
+
+        /* a bay plus the admin details that sit in front of it, on the aisle side */
+        .slot {
+            display: flex;
+            align-items: stretch;
+        }
+
+        /* details sit on the outer edge of the lot, away from the aisle */
+        .left-lane .slot {
+            flex-direction: row-reverse;
+        }
+
+        .right-lane .slot {
+            flex-direction: row;
+        }
+
+        .bay {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: stretch;
+            min-height: 134px;
+            border-top: var(--line);
+            border-bottom: var(--line);
+        }
+
+        .left-lane .bay {
+            flex-direction: row;
+            border-left: var(--line);
+        }
+
+        .right-lane .bay {
+            flex-direction: row-reverse;
+            border-right: var(--line);
+        }
+
+        .detail {
+            flex: 0 0 144px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+            padding: 0 14px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        /* hug the bay: right-aligned in the left column, left-aligned in the right */
+        .left-lane .detail {
+            align-items: flex-end;
+        }
+
+        .right-lane .detail {
+            align-items: flex-start;
+        }
+
+        /* token: solid black badge with a big number */
+        .tag-token {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 64px;
+            padding: 5px 12px 6px;
+            border-radius: 8px;
+            background: var(--ink);
+            color: var(--bg);
+            line-height: 1;
+        }
+
+        .tag-token small {
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            opacity: 0.7;
+            margin-bottom: 3px;
+        }
+
+        .tag-token b {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        /* registration: number-plate look with a double outline */
+        .plate {
+            display: inline-block;
+            max-width: 100%;
+            padding: 5px 10px;
+            border: 2px solid var(--ink);
+            border-radius: 6px;
+            box-shadow: inset 0 0 0 2px var(--bg), inset 0 0 0 3px var(--ink);
+            background: var(--bg);
+            color: var(--ink);
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            text-align: center;
+            overflow-wrap: anywhere;
+        }
+
+        /* phone: bold, tabular digits, underlined with a heavy rule */
+        .phone {
+            padding-bottom: 2px;
+            border-bottom: 3px solid var(--ink);
+            color: var(--ink);
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 132px;
+        }
+
+        .paint-no {
+            font-size: 44px;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            color: var(--ghost);
+        }
+
+        .car {
+            width: 52px;
+            height: 98px;
+        }
+
+        /* cars park nose-first against the outer edge */
+        .left-lane .car {
+            transform: rotate(-90deg);
+        }
+
+        .right-lane .car {
+            transform: rotate(90deg);
+        }
+
+        .car .body {
+            fill: var(--ink);
+        }
+
+        .car .shade {
+            fill: #3a3a3a;
+        }
+
+        .car .glass {
+            fill: #ffffff;
+        }
+
+        .car .tyre {
+            fill: #8a8a8a;
+        }
+
+        .sign {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 8px;
+            text-align: center;
+        }
+
+        .sign p {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .lot-no {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .status::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: 1.5px solid var(--ink);
+        }
+
+        .occupied .status::before {
+            background: var(--ink);
+        }
+
+        .rate {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .actions .btn {
+            font-size: 12px;
+            padding: 4px 11px;
+        }
+
+        @media (max-width: 520px) {
+            body {
+                padding: 20px 14px 36px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="top">
+            <h1>Parking Lot Management</h1>
+            <button class="btn btn-primary" onclick="loadLots()">Refresh Lots</button>
+        </div>
+
+        <div id="lots">
+        </div>
+    </div>
+
+    <script>
+        const isAdmin = {{ admin | tojson }};
+        async function loadLots() {
+            const response = await fetch("/lots");
+            const lots = await response.json();
+
+            const half = Math.ceil(lots.length / 2);
+            const lane = (side, list) => `<div class="lane ${side}-lane">${list.map(bayHTML).join("")}</div>`;
+
+            document.getElementById("lots").innerHTML = `
+                <div class="lot-inner ${isAdmin ? "admin" : ""}">
+                    ${lane("left", lots.slice(0, half))}
+                    <div class="aisle"></div>
+                    ${lane("right", lots.slice(half))}
+                </div>
+            `;
+
+            if (isAdmin) {
+                loadDetails(lots);
+            }
+        }
+
+        async function loadDetails(lots) {
+            await Promise.all(lots.filter(lot => !lot.free).map(async lot => {
+                const box = document.getElementById(`detail-${lot.lot_no}`);
+                if (!box) return;
+
+                try {
+                    const response = await fetch("/details", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            lot_no: lot.lot_no
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.message || "Details failed");
+                    }
+
+                    const token = document.createElement("span");
+                    token.className = "tag-token";
+                    const tokenLabel = document.createElement("small");
+                    tokenLabel.textContent = "Token";
+                    const tokenNo = document.createElement("b");
+                    tokenNo.textContent = result.token_no;
+                    token.append(tokenLabel, tokenNo);
+
+                    const reg = document.createElement("span");
+                    reg.className = "plate";
+                    reg.textContent = result.registration_no;
+
+                    const phone = document.createElement("span");
+                    phone.className = "phone";
+                    phone.textContent = result.phone_no || "—";
+
+                    box.replaceChildren(token, reg, phone);
+                } catch (error) {
+                    box.textContent = "Details unavailable";
+                }
+            }));
+        }
+
+        function bayHTML(lot) {
+            return `
+                    <div class="slot">
+                    <div class="bay ${lot.free ? "free" : "occupied"}">
+                    <div class="stage">
+                        ${lot.free ? `<span class="paint-no">${lot.lot_no}</span>` : `
+                        <svg class="car" viewBox="0 0 60 112" role="img" aria-label="Car parked in lot ${lot.lot_no}">
+                            <rect class="tyre" x="1" y="15" width="9" height="21" rx="3"/>
+                            <rect class="tyre" x="50" y="15" width="9" height="21" rx="3"/>
+                            <rect class="tyre" x="1" y="76" width="9" height="21" rx="3"/>
+                            <rect class="tyre" x="50" y="76" width="9" height="21" rx="3"/>
+                            <rect class="body" x="6" y="3" width="48" height="106" rx="17"/>
+                            <path class="glass" d="M14 37 Q30 29 46 37 L44 51 H16 Z"/>
+                            <rect class="shade" x="14" y="51" width="32" height="25" rx="5"/>
+                            <path class="glass" d="M16 76 H44 L46 88 Q30 94 14 88 Z"/>
+                        </svg>`}
+                    </div>
+                    <div class="sign">
+                    <p>
+                        <span class="lot-no">Lot ${lot.lot_no}</span>
+                        <span class="status">${lot.free ? "Free" : "Occupied"}</span>
+                        <span class="rate">Rate: ₹${lot.rate}/hour</span>
+                    </p>
+                    <div class="actions">
+                    ${lot.free ? `<button class="btn btn-primary" onclick="book_slot(${lot.lot_no})">Book</button>` : ``}
+                    ${!lot.free ? `<button class="btn" onclick="pull_out(${lot.lot_no}, ${lot.rate})">Pull out</button>` : ``}
+                    ${(isAdmin && !lot.free) ? `<button class="btn btn-admin" title="Admin remove" onclick="remove_slot(${lot.lot_no})">Remove</button>` : ``}
+                    </div>
+                    </div>
+                    </div>
+                    ${isAdmin ? `<div class="detail" id="detail-${lot.lot_no}">${lot.free ? "" : "Loading…"}</div>` : ``}
+                    </div>
+            `;
+        }
+
+        loadLots();
+
+       async function book_slot(lotNo) {
+            const registrationNo = prompt("Enter car registration number:");
+            if (!registrationNo) return;
+
+            const model = prompt("Enter car model:");
+            if (!model) return;
+
+            const phone = prompt("Enter phone number:");
+            if (!phone) return;
+
+            const registeredAt = new Date().toISOString();
+
+            const response = await fetch("/book", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    lot_no: lotNo,
+                    registration_no: registrationNo,
+                    model: model,
+                    registered_at: registeredAt,
+                    phone: phone
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                alert(result.message || "Booking failed");
+                return;
+            }
+
+            alert(`Parking booked!\nToken number: ${result.token_no}`);
+
+            await loadLots();
+        }
+
+        async function remove_slot(lotNo) {
+            const response = await fetch ("/remove", {
+                    method: "POST",
+                    headers: {
+                        "Content-type" : "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        lot_no : lotNo
+                    })
+                }
+            );
+
+            await loadLots();
+        }
+
+        async function pull_out(lotNo, lotRate) {
+            const tokenNo = prompt("Enter token number:");
+
+            if (!tokenNo) {
+                return;
+            }
+
+            const response = await fetch("/pullout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    token_no: Number(tokenNo),
+                    lot_no: lotNo,
+                    lot_rate : lotRate
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                alert(result.message || "Pull-out failed");
+                return;
+            }
+
+            alert(
+                `${result.message}\nAmount due: ₹${result.rate}`
+            );
+
+            await loadLots();
+}
+
+    </script>
+</body>
+</html>
